@@ -34,7 +34,7 @@ func HandleRequest(ctx context.Context, credentials Credentials) (string, error)
 		return "", err
 	}
 
-	if *loginResult.ChallengeName == cognito.ChallengeNameTypeNewPasswordRequired {
+	if loginResult.ChallengeName != nil && *loginResult.ChallengeName == cognito.ChallengeNameTypeNewPasswordRequired {
 		authHandler.SetNewPassword(credentials.Username, credentials.Password)
 		loginResult, err = authHandler.Login(credentials)
 		if err != nil {
