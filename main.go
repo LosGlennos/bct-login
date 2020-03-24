@@ -36,11 +36,11 @@ func HandleRequest(ctx context.Context, credentials Credentials) (string, error)
 }
 
 func getResultJson(res *cognito.InitiateAuthOutput) string {
-	authResult := AuthResult{
-		AccessToken:  aws.StringValue(res.AuthenticationResult.AccessToken),
-		RefreshToken: aws.StringValue(res.AuthenticationResult.RefreshToken),
-	}
-	buff, err := json.Marshal(authResult)
+	//authResult := AuthResult{
+	//	AccessToken:  aws.StringValue(res.AuthenticationResult.AccessToken),
+	//	RefreshToken: aws.StringValue(res.AuthenticationResult.RefreshToken),
+	//}
+	buff, err := json.Marshal(res.AuthenticationResult)
 	if err != nil {
 		panic(err)
 	}
