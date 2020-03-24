@@ -11,6 +11,10 @@ import (
 	"os"
 )
 
+type AuthHandler struct {
+	IdentityProvider *cognito.CognitoIdentityProvider
+}
+
 type Credentials struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -22,25 +26,54 @@ type AuthResult struct {
 }
 
 func HandleRequest(ctx context.Context, credentials Credentials) (string, error) {
-	authInput := getAuthInput(credentials)
+	authHandler := AuthHandler {
+		IdentityProvider: getCognitoClient(),
+	}
 
-	identityProvider := getCognitoClient()
-
-	res, err := identityProvider.InitiateAuth(authInput)
+	loginResult, err := authHandler.Login(credentials)
 	if err != nil {
 		return "", err
 	}
 
-	resultJson := getResultJson(res)
+	if *loginResult.ChallengeName == cognito.ChallengeNameTypeNewPasswordRequired {
+		authHandler.SetNewPassword(credentials.Username, credentials.Password)
+		loginResult, err = authHandler.Login(credentials)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	resultJson := getResultJson(loginResult)
 
 	return resultJson, nil
 }
 
-func getResultJson(res *cognito.InitiateAuthOutput) string {
-	log.Print(res)
-	log.Print(*res.AuthenticationResult)
-	log.Print(res.AuthenticationResult)
+func (authHandler *AuthHandler) Login(credentials Credentials) (*cognito.InitiateAuthOutput, error){
+	authInput := getAuthInput(credentials)
 
+	res, err := authHandler.IdentityProvider.InitiateAuth(authInput)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (authHandler *AuthHandler) SetNewPassword(username string, password string) {
+	newPasswordInput := &cognito.AdminSetUserPasswordInput{
+		Password: aws.String(password),
+		Username: aws.String(username),
+		Permanent: aws.Bool(true),
+		UserPoolId: aws.String(os.Getenv("COGNITO_USER_POOL_ID")),
+	}
+
+	_, err := authHandler.IdentityProvider.AdminSetUserPassword(newPasswordInput)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func getResultJson(res *cognito.InitiateAuthOutput) string {
 	authResult := AuthResult{
 		AccessToken:  aws.StringValue(res.AuthenticationResult.AccessToken),
 		RefreshToken: aws.StringValue(res.AuthenticationResult.RefreshToken),
@@ -59,7 +92,7 @@ func getAuthInput(credentials Credentials) *cognito.InitiateAuthInput {
 		"PASSWORD": aws.String(credentials.Password),
 	}
 	authInput := &cognito.InitiateAuthInput{
-		AuthFlow:       aws.String("USER_PASSWORD_AUTH"),
+		AuthFlow:       aws.String(cognito.AuthFlowTypeUserPasswordAuth),
 		AuthParameters: params,
 		ClientId:       aws.String(os.Getenv("COGNITO_APP_CLIENT_ID")),
 	}
