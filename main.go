@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	cognito "github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
+	"log"
 	"os"
 )
 
@@ -36,11 +37,14 @@ func HandleRequest(ctx context.Context, credentials Credentials) (string, error)
 }
 
 func getResultJson(res *cognito.InitiateAuthOutput) string {
-	//authResult := AuthResult{
-	//	AccessToken:  aws.StringValue(res.AuthenticationResult.AccessToken),
-	//	RefreshToken: aws.StringValue(res.AuthenticationResult.RefreshToken),
-	//}
-	buff, err := json.Marshal(res.AuthenticationResult)
+	log.Print(res.AuthenticationResult.AccessToken)
+	log.Print(*res.AuthenticationResult.AccessToken)
+	
+	authResult := AuthResult{
+		AccessToken:  aws.StringValue(res.AuthenticationResult.AccessToken),
+		RefreshToken: aws.StringValue(res.AuthenticationResult.RefreshToken),
+	}
+	buff, err := json.Marshal(authResult)
 	if err != nil {
 		panic(err)
 	}
