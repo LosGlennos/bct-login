@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	cognito "github.com/aws/aws-sdk-go/service/cognitoidentityprovider"
+	"log"
 	"os"
 )
 
@@ -25,6 +26,7 @@ type AuthResult struct {
 }
 
 func HandleRequest(ctx context.Context, credentials Credentials) (string, error) {
+	log.Printf("Username: %s; Password: %s", credentials.Username, credentials.Password)
 	authHandler := AuthHandler {
 		IdentityProvider: getCognitoClient(),
 	}
