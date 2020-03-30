@@ -26,7 +26,6 @@ type AuthResult struct {
 }
 
 func HandleRequest(ctx context.Context, credentials Credentials) (string, error) {
-	log.Printf("Username: %s; Password: %s", credentials.Username, credentials.Password)
 	authHandler := AuthHandler {
 		IdentityProvider: getCognitoClient(),
 	}
